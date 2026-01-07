@@ -1,0 +1,136 @@
+﻿@page "/"
+@page "/registro"
+@inject VitaForgeWeb.Services.FirebaseService Firebase
+@inject NavigationManager Nav
+
+<div class="text-center mt-5">
+    <h1>Bienvenido a VitaForge</h1>
+    <p class="lead">Genera tu dieta personalizada basada en tus objetivos.</p>
+
+    <div class="card p-4 mx-auto" style="max-width: 400px;">
+        @if (!isRegistering)
+        {
+            <h3>Iniciar Sesión</h3>
+        }
+        else
+        {
+            <h3>Registrarse</h3>
+        }
+
+        <div class="mb-3 text-start">
+            <label>Correo Electrónico</label>
+            <input @bind="email" class="form-control" type="email" placeholder="correo@ejemplo.com" />
+        </div>
+        <div class="mb-3 text-start">
+            <label>Contraseña</label>
+            <input @bind="password" class="form-control" type="password" placeholder="******" />
+        </div>
+
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="alert alert-danger">@error</div>
+        }
+
+        <div class="d-grid gap-2">
+            @if (!isRegistering)
+            {
+                <button class="btn btn-primary" @onclick="Login" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span>Cargando...</span>
+                    }
+                    else
+                    {
+                        <span>Entrar</span>
+                    }
+                </button>
+                <button class="btn btn-outline-secondary" @onclick="() => isRegistering = true">Crear cuenta nueva</button>
+            }
+            else
+            {
+                <button class="btn btn-success" @onclick="Register" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span>Cargando...</span>
+                    }
+                    else
+                    {
+                        <span>Registrarse</span>
+                    }
+                </button>
+                <button class="btn btn-outline-secondary" @onclick="() => isRegistering = false">Volver al login</button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private string email = "";
+    private string password = "";
+    private string error = "";
+    private bool isRegistering = false;
+    private bool isLoading = false;
+
+    private async Task Login()
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            error = "Por favor, completa todos los campos.";
+            return;
+        }
+
+        isLoading = true;
+        error = "";
+
+        var result = await Firebase.LoginAsync(email, password);
+        if (result.Success)
+        {
+            // Verificar si tiene datos (implementación simplificada: vamos siempre a DatosUsuario por ahora para cargar/editar)
+            Nav.NavigateTo("/datos-usuario");
+        }
+        else
+        {
+            error = "Error al iniciar sesión: " + TranslateErrores(result.Error);
+        }
+        isLoading = false;
+    }
+
+    private async Task Register()
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            error = "Por favor, completa todos los campos.";
+            return;
+        }
+
+        if (password.Length < 6)
+        {
+            error = "La contraseña debe tener al menos 6 caracteres.";
+            return;
+        }
+
+        isLoading = true;
+        error = "";
+
+        var result = await Firebase.RegisterAsync(email, password);
+        if (result.Success)
+        {
+            Nav.NavigateTo("/datos-usuario");
+        }
+        else
+        {
+            error = "Error al registrarse: " + TranslateErrores(result.Error);
+        }
+        isLoading = false;
+    }
+
+    private string TranslateErrores(string? errorMsg)
+    {
+        if (string.IsNullOrEmpty(errorMsg)) return "Error desconocido";
+        if (errorMsg.Contains("auth/invalid-email")) return "Correo inválido.";
+        if (errorMsg.Contains("auth/user-not-found")) return "Usuario no encontrado.";
+        if (errorMsg.Contains("auth/wrong-password")) return "Contraseña incorrecta.";
+        if (errorMsg.Contains("auth/email-already-in-use")) return "El correo ya está registrado.";
+        return errorMsg;
+    }
+}

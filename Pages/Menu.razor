@@ -1,0 +1,105 @@
+@page "/menu"
+@using VitaForgeWeb.Models
+
+@inject NavigationManager Nav
+
+<h3>Tu Menú Diario</h3>
+
+@if (menuGenerado == null)
+{
+    <p><em>Cargando menú...</em></p>
+}
+else
+{
+    <div class="container">
+        @foreach (var comida in new[] { "desayuno", "comida", "cena" })
+        {
+            @if (menuGenerado.ContainsKey(comida))
+            {
+                <div class="card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">@comida.ToUpper()</h5>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        @foreach (var alimento in menuGenerado[comida])
+                        {
+                            <li class="list-group-item">
+                                • @alimento.Nombre
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+        }
+
+        <div class="mt-3 text-center">
+            <button class="btn btn-secondary" @onclick="Regenerar">Generar Nuevo Menú</button>
+            <a href="datos-usuario" class="btn btn-primary ms-2">Editar Datos</a>
+        </div>
+    </div>
+}
+
+@code {
+    private Dictionary<string, List<Alimento>>? menuGenerado;
+
+    // Parámetros almacenados para regenerar
+    int sexo;
+    double peso;
+    double altura;
+    int edad;
+    string objetivo;
+    string actividad;
+
+    protected override void OnInitialized()
+    {
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        // Manual query parsing to avoid Microsoft.AspNetCore.WebUtilities dependency issues
+        var queryDictionary = new Dictionary<string, string>();
+
+        if (!string.IsNullOrEmpty(uri.Query))
+        {
+            var query = uri.Query.TrimStart('?');
+            foreach (var part in query.Split('&'))
+            {
+                var kv = part.Split('=');
+                if (kv.Length == 2)
+                {
+                    queryDictionary[kv[0]] = System.Uri.UnescapeDataString(kv[1]);
+                }
+            }
+        }
+
+        if (queryDictionary.TryGetValue("sexo", out var s) &&
+        queryDictionary.TryGetValue("peso", out var p) &&
+        queryDictionary.TryGetValue("altura", out var a) &&
+        queryDictionary.TryGetValue("edad", out var e) &&
+        queryDictionary.TryGetValue("objetivo", out var o) &&
+        queryDictionary.TryGetValue("actividad", out var ac))
+        {
+            sexo = int.Parse(s);
+            peso = double.Parse(p);
+            altura = double.Parse(a);
+            edad = int.Parse(e);
+            objetivo = o;
+            actividad = ac;
+
+            Generar();
+        }
+        else
+        {
+            // Si faltan datos, redirigir
+            Nav.NavigateTo("datos-usuario");
+        }
+    }
+
+    private void Generar()
+    {
+        menuGenerado = Alimento.GenerarMenu(sexo, peso, altura, edad, objetivo, actividad);
+    }
+
+    private void Regenerar()
+    {
+        // Al volver a llamar a Generar, el shuffle interno creará un menú diferente
+        Generar();
+    }
+}

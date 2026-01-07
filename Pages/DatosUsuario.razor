@@ -1,0 +1,152 @@
+@page "/datos-usuario"
+@using VitaForgeWeb.Models
+@using VitaForgeWeb.Services
+@using System.Text.Json
+@inject FirebaseService Firebase
+@inject NavigationManager nav
+
+<h3>Completa tu Perfil</h3>
+
+@if (isLoading)
+{
+    <p><em>Cargando perfil...</em></p>
+}
+else
+{
+    <EditForm Model="@usuario" OnValidSubmit="GuardarDatos">
+        <DataAnnotationsValidator />
+
+        <div class="mb-3">
+            <label>Peso (kg)</label>
+            <InputNumber @bind-Value="usuario.Peso" class="form-control" placeholder="Ej: 75.5" />
+            <ValidationMessage For="@(() => usuario.Peso)" />
+        </div>
+
+        <div class="mb-3">
+            <label>Altura (cm)</label>
+            <InputNumber @bind-Value="usuario.Altura" class="form-control" placeholder="Ej: 175" />
+            <ValidationMessage For="@(() => usuario.Altura)" />
+        </div>
+
+        <div class="mb-3">
+            <label>Edad</label>
+            <InputNumber @bind-Value="usuario.Edad" class="form-control" placeholder="Ej: 25" />
+            <ValidationMessage For="@(() => usuario.Edad)" />
+        </div>
+
+        <div class="mb-3">
+            <label>Sexo</label>
+            <InputRadioGroup @bind-Value="usuario.Sexo" class="form-control border-0">
+                <div class="form-check">
+                    <InputRadio Value="@("hombre")" class="form-check-input" /> Hombre
+                </div>
+                <div class="form-check">
+                    <InputRadio Value="@("mujer")" class="form-check-input" /> Mujer
+                </div>
+            </InputRadioGroup>
+            <ValidationMessage For="@(() => usuario.Sexo)" />
+        </div>
+
+        <div class="mb-3">
+            <label>Objetivo</label>
+            <InputSelect @bind-Value="usuario.Objetivo" class="form-select">
+                <option value="">Selecciona...</option>
+                <option value="perder peso">Perder peso</option>
+                <option value="mantener">Mantener</option>
+                <option value="ganar musculo">Ganar músculo</option>
+            </InputSelect>
+            <ValidationMessage For="@(() => usuario.Objetivo)" />
+        </div>
+
+        <div class="mb-3">
+            <label>Estilo de Vida</label>
+            <InputSelect @bind-Value="usuario.EstiloVida" class="form-select">
+                <option value="">Selecciona...</option>
+                <option value="sedentaria">Sedentaria</option>
+                <option value="leve">Leve (1-3 días)</option>
+                <option value="moderada">Moderada (3-5 días)</option>
+                <option value="intensa">Intensa (6-7 días)</option>
+            </InputSelect>
+            <ValidationMessage For="@(() => usuario.EstiloVida)" />
+        </div>
+
+        @if (!string.IsNullOrEmpty(mensaje))
+        {
+            <div class="alert alert-info">@mensaje</div>
+        }
+
+        <button type="submit" class="btn btn-primary w-100" disabled="@isSaving">
+            @if (isSaving)
+            {
+                <span>Guardando...</span>
+            }
+            else
+            {
+                <span>Guardar y Ver Menú</span>
+            }
+        </button>
+    </EditForm>
+}
+
+@code {
+    private Usuario usuario = new Usuario();
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string mensaje = "";
+    private string currentUid = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var currentUser = await Firebase.GetCurrentUserAsync();
+        if (currentUser == null)
+        {
+            // Si no hay usuario, volver al login
+            nav.NavigateTo("/");
+            return;
+        }
+
+        currentUid = currentUser.Uid;
+
+        // Cargar datos existentes si los hay
+        var datosExistentes = await Firebase.GetUserDataAsync(currentUid);
+        if (datosExistentes != null)
+        {
+            usuario = datosExistentes;
+            // Asegurar valores por defecto si vienen nulos
+            if (string.IsNullOrEmpty(usuario.Sexo)) usuario.Sexo = "hombre";
+        }
+
+        isLoading = false;
+    }
+
+    private async Task GuardarDatos()
+    {
+        isSaving = true;
+        mensaje = "";
+
+        // Guardar en Firestore
+        var exito = await Firebase.SaveUserDataAsync(currentUid, usuario);
+
+        if (exito)
+        {
+            mensaje = "Datos guardados correctamente.";
+
+            // Navegar al menú pasando parámetros por URL para la generación
+            var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
+            query["sexo"] = usuario.Sexo == "mujer" ? "1" : "0";
+            query["peso"] = usuario.Peso.ToString();
+            query["altura"] = usuario.Altura.ToString();
+            query["edad"] = usuario.Edad.ToString();
+            query["objetivo"] = usuario.Objetivo;
+            query["actividad"] = usuario.EstiloVida;
+
+            nav.NavigateTo($"/menu?{query}");
+        }
+        else
+        {
+            mensaje = "Error al guardar los datos. Inténtalo de nuevo.";
+        }
+
+        isSaving = false;
+    }
+}
