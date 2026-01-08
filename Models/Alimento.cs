@@ -171,6 +171,16 @@ namespace VitaForgeWeb.Models
         };
 
         // Métodos de lógica del negocio
+        /// <summary>
+        /// Genera un menú diario completo distribuido en desayuno, comida y cena.
+        /// </summary>
+        /// <param name="sexo">0 para hombre, 1 para mujer.</param>
+        /// <param name="peso">Peso en kilogramos.</param>
+        /// <param name="altura">Altura en centímetros.</param>
+        /// <param name="edad">Edad en años.</param>
+        /// <param name="objetivo">Objetivo nutricional ("perder peso", "mantener", "ganar musculo").</param>
+        /// <param name="nivelActividad">Nivel de actividad física ("sedentaria", "leve", "moderada", "intensa").</param>
+        /// <returns>Un diccionario con listas de alimentos para cada comida.</returns>
         public static Dictionary<string, List<Alimento>> GenerarMenu(int sexo, double peso, double altura, int edad, string objetivo, string nivelActividad)
         {
             var alimentosPorComida = AgruparAlimentosPorComida(Alimentos);
@@ -186,12 +196,15 @@ namespace VitaForgeWeb.Models
             switch (objetivo.ToLower())
             {
                 case "perder peso":
+                    // Déficit calórico agresivo (~33%) para pérdida de peso rápida
                     energia = rmr * CalcularFactorActividad(objetivo, nivelActividad) * 0.67;
                     break;
                 case "mantener":
+                    // Leve déficit (20%) para asegurar mantenimiento sin ganar grasa accidentalmente
                     energia = rmr * CalcularFactorActividad(objetivo, nivelActividad) * 0.8;
                     break;
                 case "ganar musculo":
+                    // 100% de los requerimientos energéticos para soportar hipertrofia
                     energia = rmr * CalcularFactorActividad(objetivo, nivelActividad) * 1.0;
                     break;
                 default:
@@ -222,16 +235,19 @@ namespace VitaForgeWeb.Models
                 switch (comida)
                 {
                     case "desayuno":
+                        // El 30% de la ingesta diaria se asigna al desayuno
                         limiteProteinas = porcionesProteinas * 0.30;
                         limiteCarbohidratos = porcionesCarbohidratos * 0.30;
                         limiteGrasas = porcionesGrasas * 0.30;
                         break;
                     case "comida":
+                        // El 40% de la ingesta diaria se asigna a la comida principal
                         limiteProteinas = porcionesProteinas * 0.40;
                         limiteCarbohidratos = porcionesCarbohidratos * 0.40;
                         limiteGrasas = porcionesGrasas * 0.40;
                         break;
                     case "cena":
+                        // El 30% restante se asigna a la cena
                         limiteProteinas = porcionesProteinas * 0.30;
                         limiteCarbohidratos = porcionesCarbohidratos * 0.30;
                         limiteGrasas = porcionesGrasas * 0.30;
@@ -262,15 +278,22 @@ namespace VitaForgeWeb.Models
             return menuDiario;
         }
 
+        /// <summary>
+        /// Algoritmo Greedy (Voraz) con inicialización aleatoria para seleccionar alimentos.
+        /// </summary>
+        /// <param name="alimentosDisponibles">Lista de candidatos.</param>
+        /// <param name="tipoPorcion">Macro a priorizar ("proteinas", "grasas", etc.).</param>
+        /// <param name="limitePorciones">Tope a llenar.</param>
         private static List<Alimento> SeleccionarAlimentos(List<Alimento> alimentosDisponibles, string tipoPorcion, double limitePorciones)
         {
             var alimentosSeleccionados = new List<Alimento>();
             var acumulado = 0.0;
 
-            // Mezclar (Shuffle) y luego ordenar descendente por la porción relevante
+            // 1. Aleatoriedad: Mezclamos la lista para garantizar variedad en cada generación
             var random = new Random();
             var mezclados = alimentosDisponibles.OrderBy(x => random.Next()).ToList();
 
+            // 2. Eficiencia: Ordenamos descendente para intentar llenar el cupo con los alimentos más ricos en el nutriente
             var ordenados = mezclados.OrderByDescending(it => // Prioriza los que tienen más cantidad del nutriente que buscamos
             {
                 return tipoPorcion switch
@@ -314,6 +337,9 @@ namespace VitaForgeWeb.Models
             return resultado;
         }
 
+        /// <summary>
+        /// Calcula la Tasa Metabólica Basal (RMR) usando la ecuación de Mifflin-St Jeor.
+        /// </summary>
         public static double CalcularRMR(int sexo, double peso, double altura, int edad)
         {
             if (sexo == 0) // Hombre
@@ -326,6 +352,9 @@ namespace VitaForgeWeb.Models
             }
         }
 
+        /// <summary>
+        /// Obtiene el multiplicador de actividad física según objetivo y nivel.
+        /// </summary>
         public static double CalcularFactorActividad(string objetivo, string nivelActividad)
         {
             var factoresActividad = new Dictionary<string, Dictionary<string, double>>
@@ -351,6 +380,9 @@ namespace VitaForgeWeb.Models
             return 1.0;
         }
 
+        /// <summary>
+        /// Determina el factor de proteína (g/kg? o factor arbitrario) basado en tablas predefinidas.
+        /// </summary>
         public static double CalcularFactorProteina(string objetivo, string nivelActividad)
         {
             var factoresProteina = new Dictionary<string, Dictionary<string, double>>
@@ -373,6 +405,9 @@ namespace VitaForgeWeb.Models
             return 1.0;
         }
 
+        /// <summary>
+        /// Determina el factor de grasas basado en tablas predefinidas.
+        /// </summary>
         public static double CalcularFactorGrasas(string objetivo, string nivelActividad)
         {
             var factoresGrasas = new Dictionary<string, Dictionary<string, double>>
@@ -395,16 +430,25 @@ namespace VitaForgeWeb.Models
             return 1.0;
         }
 
+        /// <summary>
+        /// Calcula gramos totales de proteína necesarios (Peso * 2.2 * Factor).
+        /// </summary>
         public static int CalcularProteinas(double peso, double factorProteina)
         {
             return (int)Math.Ceiling(peso * 2.2 * factorProteina);
         }
 
+        /// <summary>
+        /// Calcula gramos totales de grasa necesarios (Peso * 2.2 * Factor).
+        /// </summary>
         public static int CalcularGrasas(double peso, double factorGrasas)
         {
             return (int)Math.Ceiling(peso * 2.2 * factorGrasas);
         }
 
+        /// <summary>
+        /// Calcula gramos de carbohidratos restantes para cubrir la energía total.
+        /// </summary>
         public static int CalcularCarbohidratos(double energia, double proteinas, double grasas)
         {
             double caloriasProteinas = proteinas * 4;
@@ -412,6 +456,10 @@ namespace VitaForgeWeb.Models
             return (int)Math.Ceiling((energia - caloriasProteinas - caloriasGrasas) / 4);
         }
 
+        /// <summary>
+        /// Convierte los gramos de macros a "Porciones" estandarizadas del sistema.
+        /// (Proteína / 25, Grasa / 15, Carbohidratos / 25).
+        /// </summary>
         public static (int, int, int) CalcularPorciones(double proteinas, double grasas, double carbohidratos)
         {
             return (
