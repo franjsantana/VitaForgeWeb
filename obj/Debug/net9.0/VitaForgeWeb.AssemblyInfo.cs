@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VitaForgeWeb")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+98470c49e5f6d7a4043acb858aa72a3a5510efcc")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f084145b08339328e7e391613c165a8d08d301c5")]
 [assembly: System.Reflection.AssemblyProductAttribute("VitaForgeWeb")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VitaForgeWeb")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

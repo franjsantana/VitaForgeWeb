@@ -83,7 +83,7 @@ namespace VitaForgeWeb.Services
 
     public class CurrentUser
     {
-        public string? Uid { get; set; }
+        public string? Uid { get; set; } // Firebase UID
         public string? Email { get; set; }
     }
 }

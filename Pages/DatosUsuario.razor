@@ -91,13 +91,14 @@ else
 @code {
     private Usuario usuario = new Usuario();
     private bool isLoading = true;
-    private bool isSaving = false;
+    private bool isSaving = false; // Indica si se está guardando
     private string mensaje = "";
-    private string currentUid = "";
+    private string currentUid = ""; // Almacena el UID del usuario actual
 
+    // Al inicializar la página, cargar datos del usuario actual
     protected override async Task OnInitializedAsync()
     {
-        var currentUser = await Firebase.GetCurrentUserAsync();
+        var currentUser = await Firebase.GetCurrentUserAsync(); //Obtiene el usuario actual
         if (currentUser == null)
         {
             // Si no hay usuario, volver al login
@@ -105,7 +106,7 @@ else
             return;
         }
 
-        currentUid = currentUser.Uid;
+        currentUid = currentUser.Uid; //Almacena el UID del usuario actual
 
         // Cargar datos existentes si los hay
         var datosExistentes = await Firebase.GetUserDataAsync(currentUid);

@@ -107,7 +107,7 @@ namespace VitaForgeWeb.Models
             new Alimento("Leche entera de vaca (1 vaso/250ml)", 0.5, 0.5, 0.5, new HashSet<string> { "desayuno" }),
             new Alimento("Leche de cabra (1 vaso/250ml)", 0.5, 0.5, 0.5, new HashSet<string> { "desayuno" }),
             new Alimento("Leche de oveja (1 vaso/250ml)", 0.5, 0.5, 1.0, new HashSet<string> { "desayuno" }),
-            
+
             new Alimento("Yoghurt (1 envase/125 gramos)", 0.5, 0.0, 0.5, new HashSet<string> { "comida", "cena" }),
             new Alimento("Arroz con leche (170 gramos)", 0.0, 1.0, 0.0, new HashSet<string> { "comida", "cena" }),
             new Alimento("Flan de huevo (1 envase/125gramos)", 0.0, 1.0, 0.0, new HashSet<string> { "comida", "cena" }),
@@ -271,7 +271,7 @@ namespace VitaForgeWeb.Models
             var random = new Random();
             var mezclados = alimentosDisponibles.OrderBy(x => random.Next()).ToList();
 
-            var ordenados = mezclados.OrderByDescending(it =>
+            var ordenados = mezclados.OrderByDescending(it => // Prioriza los que tienen más cantidad del nutriente que buscamos
             {
                 return tipoPorcion switch
                 {
